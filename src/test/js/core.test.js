@@ -327,3 +327,38 @@ test('diffLineStats: 인접 del+ins 는 변경으로 집계', () => {
   ];
   assert.deepEqual(C.diffLineStats(ops), { del: 1, ins: 1, mod: 2 });
 });
+
+/* =====================================================================
+ * 11. 오타·맞춤법 교정 (fixTypos)
+ * ===================================================================== */
+test('fixTypos: 흔한 오타 교정', () => {
+  const r = C.fixTypos('안녕하세오 고갠님! 주문이 완료됬습니다. 몇일 뒤에 연락할께요.');
+  assert.equal(r.text, '안녕하세요 고객님! 주문이 완료됐습니다. 며칠 뒤에 연락할게요.');
+  assert.equal(r.fixedCount, 5); // 안녕하세오·고갠님·됬·몇일·할께
+});
+
+test('fixTypos: 자주 틀리는 맞춤법 (왠만/어떻해/이예요/않되)', () => {
+  assert.equal(C.fixTypos('왠만하면 참아').text, '웬만하면 참아');
+  assert.equal(C.fixTypos('나 어떻해').text, '나 어떡해');
+  assert.equal(C.fixTypos('선물이예요').text, '선물이에요');
+  assert.equal(C.fixTypos('그러면 않되는 거야').text, '그러면 안 되는 거야');
+});
+
+test('fixTypos: 멀쩡한 단어는 건드리지 않음 (오교정 방지)', () => {
+  const keep = '아버지께요. 햇살이 좋다. 색이 바램 현상이 있다. 물건을 올려 두었다. 웬만하다.';
+  assert.equal(C.fixTypos(keep).text, keep);
+  assert.equal(C.fixTypos(keep).changed, false);
+});
+
+test('fixTypos: 코드 펜스 내부는 보존', () => {
+  const src = '됬다\n```\n됬다 몇일 고갠님\n```';
+  const r = C.fixTypos(src);
+  assert.ok(r.text.startsWith('됐다'));
+  assert.ok(r.text.includes('됬다 몇일 고갠님'));
+});
+
+test('optimizeAll: 오타 교정 포함 + fixedCount 보고', () => {
+  const r = C.optimizeAll('안녕하세요! 보고서 작성 부탁드립니다. 초안이 완료됬어요.');
+  assert.ok(r.text.includes('완료됐어요'));
+  assert.ok(r.fixedCount >= 1);
+});

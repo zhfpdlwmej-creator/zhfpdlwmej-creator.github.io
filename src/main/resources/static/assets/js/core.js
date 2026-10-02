@@ -544,6 +544,80 @@
   }
 
   /* =====================================================================
+   * 4.5 오타·맞춤법 교정 — 고정밀 규칙 사전
+   *  원칙: "항상 틀린 표기"만 담는다. 문맥에 따라 맞을 수 있는 표기는
+   *  뒤따르는 어미를 조건으로 걸거나 아예 넣지 않는다 (오교정 > 미교정).
+   *  코드 펜스 내부는 건드리지 않는다.
+   * ===================================================================== */
+  var TYPO_RULES = [
+    // --- 흔한 타이핑 실수 (호칭/인사) ---
+    [/고갠님/g, '고객님'], [/고객닌/g, '고객님'], [/고겍님/g, '고객님'],
+    [/안녕하세오/g, '안녕하세요'], [/안녕하셍요/g, '안녕하세요'], [/안녕하새요/g, '안녕하세요'],
+    [/감사한니다/g, '감사합니다'], [/감사햅니다/g, '감사합니다'], [/감샤합니다/g, '감사합니다'],
+    [/합니디(?![가-힣])/g, '합니다'], [/습니디(?![가-힣])/g, '습니다'], [/임니다/g, '입니다'], [/님니다/g, '습니다'],
+    // --- 됬/됀/됫 → 됐/된 (해당 표기는 항상 오타) ---
+    [/됬/g, '됐'], [/됫/g, '됐'], [/됀/g, '된'],
+    // --- 햇 + 어미 → 했 ("햇살/햇빛"은 어미가 안 따라와 안전) ---
+    [/햇(?=다|어|었|으|습니다|는데|지만|고(?![가-힣])|음(?![가-힣]))/g, '했'],
+    // --- ~ㄹ께 → ~ㄹ게 (자주 쓰는 동사 한정 — "아버지께" 같은 조사 '께' 보호) ---
+    [/(할|갈|볼|줄|올|살|쓸|드릴|먹을|있을|말할|연락할|확인할|전달할|보낼|주실|해줄|해드릴|알려줄|알려드릴|알려주실|도와줄|보여줄|보여드릴)께(?=요|[.!?~\s]|$)/g, '$1게'],
+    // --- ~ㄹ려고 → ~려고 ---
+    [/할려(?=고|구|면|다)/g, '하려'], [/갈려(?=고|구|면)/g, '가려'], [/볼려(?=고|구|면)/g, '보려'],
+    [/먹을려(?=고|구|면)/g, '먹으려'], [/만들려고/g, '만들려고'],
+    // --- 왠/웬 ---
+    [/왠만(?=하|큼|해)/g, '웬만'], [/왠일/g, '웬일'], [/왠떡/g, '웬떡'], [/왠걸/g, '웬걸'], [/웬지(?![가-힣])/g, '왠지'],
+    // --- 자주 틀리는 표기 ---
+    [/어떻해/g, '어떡해'], [/어떡게/g, '어떻게'],
+    [/몇일(?![가-힣])/g, '며칠'], [/몇 일(?=[이을은 ]|$)/g, '며칠'],
+    [/금새(?![가-힣])/g, '금세'],
+    [/희안하/g, '희한하'],
+    [/오랫만/g, '오랜만'], [/오랜동안/g, '오랫동안'],
+    [/역활/g, '역할'],
+    [/어의없/g, '어이없'], [/어의가 없/g, '어이가 없'],
+    [/궂이/g, '굳이'],
+    [/예기하(?=기|고|면|자|는)/g, '얘기하'],
+    [/임마(?![가-힣])/g, '인마'],
+    [/설레임/g, '설렘'],
+    [/느즈막/g, '느지막'],
+    [/몰르(?=겠|고|면|지)/g, '모르'],
+    [/들어나(?=다|서|고|는|지)/g, '드러나'],
+    [/바램(?=입니다|이에요|이야|이다|이지만)/g, '바람'],
+    [/(빨리|얼른|어서) 낳으(?=세요|시|면)/g, '$1 나으'],
+    [/감기 낳(?=았|아|으)/g, '감기 나'],
+    // --- 부사 '-이/-히' ---
+    [/깨끗히/g, '깨끗이'], [/일일히/g, '일일이'], [/곰곰히/g, '곰곰이'], [/틈틈히/g, '틈틈이'],
+    [/깊숙히/g, '깊숙이'], [/솔직이/g, '솔직히'], [/가만이(?![가-힣])/g, '가만히'],
+    // --- 이예요 → 이에요 ('이예요'는 항상 비표준) ---
+    [/이예요/g, '이에요'],
+    // --- 않되/않돼 → 안 되/안 돼 ---
+    [/않되(?=는|서|고|니|면|지)/g, '안 되'], [/않돼(?![가-힣])/g, '안 돼'], [/않된다/g, '안 된다'],
+    // --- 뵈요 → 봬요 ---
+    [/뵈요(?![가-힣])/g, '봬요']
+  ];
+
+  function fixTypos(input) {
+    var before = String(input == null ? '' : input);
+    var parts = splitFences(normalize(before));
+    var fixed = 0;
+    for (var k = 0; k < parts.length; k++) {
+      var p = parts[k];
+      if (p.type !== 'text') continue;
+      var content = p.content;
+      for (var r = 0; r < TYPO_RULES.length; r++) {
+        content = content.replace(TYPO_RULES[r][0], function () {
+          fixed++;
+          var rep = TYPO_RULES[r][1];
+          if (rep.indexOf('$1') < 0) return rep;
+          return rep.replace('$1', arguments[1]);
+        });
+      }
+      p.content = content;
+    }
+    var after = joinFences(parts);
+    return { text: after, changed: after !== before, fixedCount: fixed, removedChars: Math.max(0, before.length - after.length) };
+  }
+
+  /* =====================================================================
    * 5. 압축 3 — JSON / 코드 Minify
    * ===================================================================== */
   var INDENT_SENSITIVE = /^(?:py|python|python3|yaml|yml|makefile|make|mk|haskell|hs|coffee|coffeescript|pug|jade|sass|nim|fsharp|fs|elm|md|markdown|text|txt|plaintext|diff|patch)$/;
@@ -674,13 +748,15 @@
    * 6. 전체 최적화 (수식어 → Minify → 공백)
    * ===================================================================== */
   function optimizeAll(input) {
-    var a = removeFillers(input);
+    var t = fixTypos(input);
+    var a = removeFillers(t.text);
     var b = minifyJsonAndCode(a.text);
     var c = cleanWhitespace(b.text);
     var before = String(input == null ? '' : input);
     return {
       text: c.text,
       changed: c.text !== before,
+      fixedCount: t.fixedCount,
       removedCount: a.removedCount,
       jsonCount: b.jsonCount,
       codeCount: b.codeCount,
@@ -733,6 +809,7 @@
     formatNumber: formatNumber,
     cleanWhitespace: cleanWhitespace,
     removeFillers: removeFillers,
+    fixTypos: fixTypos,
     minifyJsonAndCode: minifyJsonAndCode,
     optimizeAll: optimizeAll,
     History: History

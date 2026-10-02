@@ -322,8 +322,12 @@
   var OPS = {
     whitespace: { fn: C.cleanWhitespace, done: function (r) { return '공백·줄바꿈 정리 완료 (' + C.formatNumber(r.removedChars) + '자 감소)'; } },
     fillers: { fn: C.removeFillers, done: function (r) { return '인사말·수식어 ' + r.removedCount + '곳 정리'; } },
+    typos: { fn: C.fixTypos, done: function (r) { return '오타·맞춤법 ' + r.fixedCount + '곳 교정'; } },
     minify: { fn: C.minifyJsonAndCode, done: function (r) { return 'JSON ' + r.jsonCount + '개 · 코드 ' + r.codeCount + '개 정리'; } },
-    all: { fn: C.optimizeAll, done: function (r) { return '한 번에 다듬기 완료 (' + C.formatNumber(r.removedChars) + '자 감소)'; } }
+    all: { fn: C.optimizeAll, done: function (r) {
+      var extra = r.fixedCount ? ' · 오타 ' + r.fixedCount + '곳 교정' : '';
+      return '한 번에 다듬기 완료 (' + C.formatNumber(r.removedChars) + '자 감소' + extra + ')';
+    } }
   };
 
   function runOp(op) {
@@ -357,7 +361,7 @@
   /* =====================================================================
    * 변경 내역(diff) 카드 — 다듬기 직전/직후 비교
    * ===================================================================== */
-  var OP_LABELS = { whitespace: '공백·줄바꿈 정리', fillers: '인사말·수식어 제거', minify: 'JSON/코드 Minify', all: '한 번에 다듬기' };
+  var OP_LABELS = { whitespace: '공백·줄바꿈 정리', fillers: '인사말·수식어 제거', typos: '오타·맞춤법 교정', minify: 'JSON/코드 줄이기', all: '한 번에 다듬기' };
   var diffCard = $('diffCard');
   var lastDiff = null;   // { before, after, label } — 마지막 다듬기의 변경 내역
   var diffOpen = true;   // 접기/펼치기 상태 (카드 자체는 유효한 diff 가 있는 한 유지)
@@ -447,7 +451,7 @@
     '    ]',
     '}',
     '',
-    '결과는 표로 정리해 주시면 정말 감사하겠습니다.',
+    '결과는 표로 정리해 주시면 정말 감사하겠습니다. 분석이 완료됬으면 알려주실께요?',
     '늘 도움 주셔서 감사합니다! 좋은 하루 되세요~'
   ].join('\n');
 
