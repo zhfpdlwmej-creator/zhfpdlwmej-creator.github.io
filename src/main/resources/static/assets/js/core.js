@@ -18,16 +18,36 @@
    *    exact  : true 면 실제 토크나이저 결과 그대로
    * ===================================================================== */
   var PRICE_AS_OF = '2026-10';
+
+  /* ---------------------------------------------------------------------
+   * 토크나이저 배율 (o200k 토큰 수 대비, 2026-10 기준 실측 연구 반영)
+   *  - GPT-5/6 의 o200k_harmony 는 o200k_base 와 BPE 병합이 같아 일반 텍스트
+   *    토큰 수가 동일 → GPT 계열은 배율 1.0 의 "직접 계산"
+   *  - Claude 4.7+ 토크나이저(Fable 5.1 · Opus/Sonnet 5.5): 영어 +58.6%,
+   *    12개 언어 평균 +65.3% (ellamind Tokenization Tax Report 2026)
+   *  - Claude Haiku 4.5: 구세대 토크나이저 — 영어 ~+16%, CJK 열세
+   *  - Gemini: 256k SentencePiece — 영어는 o200k 와 동급, CJK 는 소폭 우세
+   *  배율은 언어 구성(scriptShares) 가중 평균으로 적용한다. 공개 토크나이저가
+   *  없는 모델은 ±10~20% 오차가 있을 수 있어 화면에 ≈ 로 표기한다.
+   * --------------------------------------------------------------------- */
+  var FACTORS = {
+    openai:   { latin: 1.00, hangul: 1.00, cjk: 1.00, other: 1.00 },
+    claude47: { latin: 1.59, hangul: 1.70, cjk: 1.70, other: 1.65 },
+    claudeOld:{ latin: 1.16, hangul: 1.45, cjk: 1.40, other: 1.25 },
+    gemini:   { latin: 1.00, hangul: 0.95, cjk: 0.90, other: 1.00 }
+  };
+
   // base : 토큰 수 기준 모델(OpenAI o200k 토크나이저 직접 계산) — 절감량/모바일 바 표시에 사용
+  // priceOver200k : 20만 토큰 초과분에 적용되는 장문 컨텍스트 입력 단가 (공시된 모델만)
   var MODELS = [
-    { id: 'gpt-6-astra',       vendor: 'openai',    name: 'GPT-6 Astra',       price: 10.00, factor: 1.00, exact: true,  primary: true, base: true },
-    { id: 'gpt-6-sol',         vendor: 'openai',    name: 'GPT-6 Sol',         price: 2.00,  factor: 1.00, exact: true },
-    { id: 'claude-fable-5-1',  vendor: 'anthropic', name: 'Claude Fable 5.1',  price: 10.00, factor: 1.30, exact: false, primary: true },
-    { id: 'claude-opus-5-5',   vendor: 'anthropic', name: 'Claude Opus 5.5',   price: 4.00,  factor: 1.30, exact: false },
-    { id: 'claude-sonnet-5-5', vendor: 'anthropic', name: 'Claude Sonnet 5.5', price: 2.00,  factor: 1.30, exact: false },
-    { id: 'claude-haiku-4-5',  vendor: 'anthropic', name: 'Claude Haiku 4.5',  price: 1.00,  factor: 1.15, exact: false },
-    { id: 'gemini-3-1-pro',    vendor: 'google',    name: 'Gemini 3.1 Pro',    price: 2.00,  factor: 1.00, exact: false, primary: true },
-    { id: 'gemini-3-flash',    vendor: 'google',    name: 'Gemini 3 Flash',    price: 0.50,  factor: 1.00, exact: false }
+    { id: 'gpt-6-astra',       vendor: 'openai',    name: 'GPT-6 Astra',       price: 10.00, fk: 'openai',    exact: true,  primary: true, base: true },
+    { id: 'gpt-6-sol',         vendor: 'openai',    name: 'GPT-6 Sol',         price: 2.00,  fk: 'openai',    exact: true },
+    { id: 'claude-fable-5-1',  vendor: 'anthropic', name: 'Claude Fable 5.1',  price: 10.00, fk: 'claude47',  exact: false, primary: true },
+    { id: 'claude-opus-5-5',   vendor: 'anthropic', name: 'Claude Opus 5.5',   price: 4.00,  fk: 'claude47',  exact: false },
+    { id: 'claude-sonnet-5-5', vendor: 'anthropic', name: 'Claude Sonnet 5.5', price: 2.00,  fk: 'claude47',  exact: false },
+    { id: 'claude-haiku-4-5',  vendor: 'anthropic', name: 'Claude Haiku 4.5',  price: 1.00,  fk: 'claudeOld', exact: false },
+    { id: 'gemini-3-1-pro',    vendor: 'google',    name: 'Gemini 3.1 Pro',    price: 2.00,  priceOver200k: 4.00, fk: 'gemini', exact: false, primary: true },
+    { id: 'gemini-3-flash',    vendor: 'google',    name: 'Gemini 3 Flash',    price: 0.50,  fk: 'gemini',    exact: false }
   ];
   var BASE_MODEL = MODELS.filter(function (m) { return m.base; })[0];
 
@@ -168,13 +188,48 @@
     return total;
   }
 
-  function modelTokens(baseTokens, model) {
-    if (!baseTokens) return 0;
-    return model.exact ? baseTokens : Math.max(1, Math.round(baseTokens * model.factor));
+  /**
+   * 문자 종류별 구성 비율 — 토크나이저 배율 가중치용.
+   * 공백은 앞뒤 단어에 흡수되는 경향이 있어 비중 계산에서 제외한다.
+   */
+  function scriptShares(text) {
+    var s = String(text == null ? '' : text);
+    var hangul = 0, cjk = 0, latin = 0, other = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c === 32 || c === 9 || c === 10 || c === 13) continue;
+      if (c >= 0xAC00 && c <= 0xD7A3) hangul++;
+      else if ((c >= 0x3040 && c <= 0x30FF) || (c >= 0x3400 && c <= 0x9FFF) || (c >= 0xF900 && c <= 0xFAFF)) cjk++;
+      else if ((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122)) latin++;
+      else other++;
+    }
+    var total = hangul + cjk + latin + other;
+    if (!total) return { hangul: 0, cjk: 0, latin: 1, other: 0 };
+    return { hangul: hangul / total, cjk: cjk / total, latin: latin / total, other: other / total };
   }
 
-  function costUSD(tokens, pricePerMillion) {
-    return (tokens || 0) * (pricePerMillion || 0) / 1e6;
+  /** o200k 토큰 수 × 모델 토크나이저 배율(언어 구성 가중) */
+  function modelTokens(baseTokens, model, shares) {
+    if (!baseTokens) return 0;
+    if (model.exact) return baseTokens;
+    var f = FACTORS[model.fk] || FACTORS.openai;
+    var sh = shares || { hangul: 0, cjk: 0, latin: 1, other: 0 };
+    var factor = f.latin * sh.latin + f.hangul * sh.hangul + f.cjk * sh.cjk + f.other * sh.other;
+    return Math.max(1, Math.round(baseTokens * factor));
+  }
+
+  /** 입력 비용(USD) — 장문 컨텍스트 단가(priceOver200k)가 공시된 모델은 20만 토큰 초과분에 가산 */
+  function costUSD(tokens, pricePerMillion, over200kPrice) {
+    tokens = tokens || 0;
+    if (over200kPrice && tokens > 200000) {
+      return (200000 * pricePerMillion + (tokens - 200000) * over200kPrice) / 1e6;
+    }
+    return tokens * (pricePerMillion || 0) / 1e6;
+  }
+
+  /** 모델 객체 기준 입력 비용 */
+  function modelCostUSD(tokens, model) {
+    return costUSD(tokens, model.price, model.priceOver200k);
   }
 
   function formatUSD(v) {
@@ -669,8 +724,11 @@
     countGraphemes: countGraphemes,
     utf8Bytes: utf8Bytes,
     estimateTokensHeuristic: estimateTokensHeuristic,
+    FACTORS: FACTORS,
+    scriptShares: scriptShares,
     modelTokens: modelTokens,
     costUSD: costUSD,
+    modelCostUSD: modelCostUSD,
     formatUSD: formatUSD,
     formatNumber: formatNumber,
     cleanWhitespace: cleanWhitespace,

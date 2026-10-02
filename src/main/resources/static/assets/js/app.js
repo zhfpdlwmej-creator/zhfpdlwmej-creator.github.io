@@ -161,32 +161,35 @@
     return st;
   }
 
-  function renderModels(baseTokens, approx) {
+  function renderModels(baseTokens, approx, shares) {
     var primary = $('primaryModels');
     primary.innerHTML = '';
     models.filter(function (m) { return m.primary; }).forEach(function (m) {
-      var tok = C.modelTokens(baseTokens, m);
+      var tok = C.modelTokens(baseTokens, m, shares);
+      var cost = C.modelCostUSD(tok, m);
       var li = document.createElement('li');
       li.className = 'model-row';
       li.innerHTML =
         '<span class="vendor vendor--' + m.vendor + '"></span>' +
         '<span class="name">' + m.name + ' <small>' + (m.exact && !approx ? '정확' : '≈ 추정') + '</small></span>' +
         '<span class="tok">' + fmt(tok) + '<small>토큰</small></span>' +
-        '<span class="cost">' + won(C.costUSD(tok, m.price)) + '</span>';
-      li.title = '입력 단가 $' + m.price + ' / 1M tokens (' + C.formatUSD(C.costUSD(tok, m.price)) + ')';
+        '<span class="cost">' + won(cost) + '</span>';
+      li.title = '입력 단가 $' + m.price + ' / 1M tokens (' + C.formatUSD(cost) + ')'
+        + (m.priceOver200k ? ' · 20만 토큰 초과분 $' + m.priceOver200k : '');
       primary.appendChild(li);
     });
 
     var rows = $('modelRows');
     rows.innerHTML = '';
     models.forEach(function (m) {
-      var tok = C.modelTokens(baseTokens, m);
+      var tok = C.modelTokens(baseTokens, m, shares);
+      var c1 = C.modelCostUSD(tok, m);
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td>' + m.name + (m.exact && !approx ? '' : ' <span style="opacity:.55">≈</span>') + '</td>' +
         '<td>' + fmt(tok) + '</td>' +
-        '<td title="' + C.formatUSD(C.costUSD(tok, m.price)) + '">' + won(C.costUSD(tok, m.price)) + '</td>' +
-        '<td title="' + C.formatUSD(C.costUSD(tok, m.price) * 1000) + '">' + won(C.costUSD(tok, m.price) * 1000) + '</td>';
+        '<td title="' + C.formatUSD(c1) + '">' + won(c1) + '</td>' +
+        '<td title="' + C.formatUSD(c1 * 1000) + '">' + won(c1 * 1000) + '</td>';
       rows.appendChild(tr);
     });
   }
@@ -259,7 +262,7 @@
     if (text !== input.value) return; // 입력이 바뀐 옛 결과
     var st = renderStats(text);
     lastTokens = tok.count || 0;
-    renderModels(lastTokens, tok.approx);
+    renderModels(lastTokens, tok.approx, C.scriptShares(text));
     if (!tok.approx) renderViz(tok.segments, tok.truncated, tok.count);
     else renderViz(null);
     // 미니 통계 + 모바일 바
@@ -574,6 +577,16 @@
     onInput(true);
     toast('단가·환율을 저장했습니다');
   });
+
+  /* =====================================================================
+   * 계산 방식 다이얼로그
+   * ===================================================================== */
+  var methodDlg = $('methodDialog');
+  $('methodBtn').addEventListener('click', function () {
+    methodDlg.querySelectorAll('.method-asof').forEach(function (el) { el.textContent = C.PRICE_AS_OF; });
+    if (typeof methodDlg.showModal === 'function') methodDlg.showModal();
+  });
+  methodDlg.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { methodDlg.close(); }); });
 
   /* =====================================================================
    * 탭 전환 — 토큰 계산기 / 코드·문서 비교

@@ -189,16 +189,35 @@ test('estimateTokensHeuristic: 규모 감각 (영문 ~4자/토큰)', () => {
   assert.equal(C.estimateTokensHeuristic(''), 0);
 });
 
-test('modelTokens: exact 모델은 그대로, 추정 모델은 factor 반영', () => {
-  const exact = C.MODELS.find(m => m.exact);
-  const approx = C.MODELS.find(m => !m.exact && m.factor > 1);
-  assert.equal(C.modelTokens(100, exact), 100);
-  assert.equal(C.modelTokens(100, approx), Math.round(100 * approx.factor));
-  assert.equal(C.modelTokens(0, approx), 0);
+test('scriptShares: 언어 구성 비율 (공백 제외)', () => {
+  const sh = C.scriptShares('안녕 ab');
+  assert.equal(sh.hangul, 0.5);
+  assert.equal(sh.latin, 0.5);
+  assert.deepEqual(C.scriptShares(''), { hangul: 0, cjk: 0, latin: 1, other: 0 });
+  assert.equal(C.scriptShares('漢字かな').cjk, 1);
 });
 
-test('costUSD/formatUSD', () => {
+test('modelTokens: exact 모델은 그대로, 추정 모델은 언어 가중 배율 반영', () => {
+  const exact = C.MODELS.find(m => m.exact);
+  const claude = C.MODELS.find(m => m.fk === 'claude47');
+  assert.equal(C.modelTokens(100, exact, C.scriptShares('hello 안녕')), 100);
+  // 순수 영문: latin 배율 그대로
+  assert.equal(C.modelTokens(100, claude, C.scriptShares('hello world')), Math.round(100 * C.FACTORS.claude47.latin));
+  // 순수 한글: hangul 배율
+  assert.equal(C.modelTokens(100, claude, C.scriptShares('안녕하세요')), Math.round(100 * C.FACTORS.claude47.hangul));
+  // 반반: 중간값
+  const half = C.modelTokens(1000, claude, { hangul: 0.5, cjk: 0, latin: 0.5, other: 0 });
+  assert.equal(half, Math.round(1000 * (C.FACTORS.claude47.latin + C.FACTORS.claude47.hangul) / 2));
+  assert.equal(C.modelTokens(0, claude, null), 0);
+});
+
+test('costUSD/formatUSD + 장문 컨텍스트 단가', () => {
   assert.equal(C.costUSD(1000000, 2.5), 2.5);
+  // 20만 초과분은 over200k 단가: 30만 토큰 = 20만×$2 + 10만×$4 = $0.8
+  assert.equal(C.costUSD(300000, 2, 4), 0.8);
+  assert.equal(C.costUSD(100000, 2, 4), 0.2); // 미만이면 기본 단가
+  const gem = C.MODELS.find(m => m.id === 'gemini-3-1-pro');
+  assert.equal(C.modelCostUSD(300000, gem), 0.8);
   assert.equal(C.formatUSD(0), '$0');
   assert.equal(C.formatUSD(2.5), '$2.50');
   assert.equal(C.formatUSD(0.000005), '$0.000005');

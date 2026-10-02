@@ -206,7 +206,10 @@
         <section class="card p-4" aria-labelledby="tokTitle">
           <div class="flex items-center justify-between">
             <h2 id="tokTitle" class="card-title">예상 토큰 · 입력 비용</h2>
-            <button id="priceBtn" type="button" class="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">단가 편집</button>
+            <div class="flex items-center gap-2.5">
+              <button id="methodBtn" type="button" class="text-xs font-medium text-slate-400 hover:text-slate-600 hover:underline dark:hover:text-slate-200">계산 방식</button>
+              <button id="priceBtn" type="button" class="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">단가 편집</button>
+            </div>
           </div>
           <ul id="primaryModels" class="mt-3 space-y-2.5"></ul>
 
@@ -224,7 +227,8 @@
             </div>
           </details>
           <p class="mt-3 text-[11px] leading-relaxed text-slate-400">
-            GPT 계열은 공개 토크나이저로 <b>직접 계산</b>, Claude·Gemini는 공개 토크나이저가 없어 <b>≈ 추정치</b>입니다.
+            GPT 계열은 공개 토크나이저로 <b>직접 계산</b>(오차 없음), Claude·Gemini는 공개 토크나이저가 없어
+            실측 연구 배율을 글의 언어 구성에 가중한 <b>≈ 추정치</b>입니다 — 자세한 근거는 [계산 방식] 참고.
             단가(<span id="priceAsOf"></span> 기준)와 환율은 [단가 편집]에서 바꿀 수 있습니다.
           </p>
         </section>
@@ -353,6 +357,38 @@
         <button type="button" class="btn-secondary" data-close>취소</button>
         <button id="priceSave" type="button" class="btn-primary">저장</button>
       </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- ================= Method dialog ================= -->
+<dialog id="methodDialog" class="price-dialog" aria-labelledby="methodTitle">
+  <div class="p-5">
+    <div class="flex items-center justify-between">
+      <h2 id="methodTitle" class="text-base font-semibold text-slate-900 dark:text-white">토큰·비용은 이렇게 계산합니다</h2>
+      <button type="button" class="icon-btn" data-close aria-label="닫기">✕</button>
+    </div>
+    <div class="mt-4 space-y-3 text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
+      <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+        <p class="font-semibold text-slate-900 dark:text-white">🟢 GPT 계열 — 직접 계산 (오차 없음)</p>
+        <p class="mt-1">OpenAI가 공개한 토크나이저(o200k)를 이 브라우저 안에서 실제로 실행합니다. GPT-5·6의 o200k_harmony는 일반 텍스트 토큰 수가 o200k와 동일해, 실제 과금 토큰 수와 같습니다.</p>
+      </div>
+      <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+        <p class="font-semibold text-slate-900 dark:text-white">🟠 Claude — 실측 연구 기반 추정 (±15% 내외)</p>
+        <p class="mt-1">Claude의 토크나이저는 비공개입니다. 2026년 공개 실측 연구(12개 언어 비교) 기준 최신 Claude는 GPT 대비 영어 +59%, 평균 +65% 토큰을 사용해, 이 배율을 글의 언어 구성(한글/영문/한자 비중)에 가중해 추정합니다. Haiku 4.5는 구세대 토크나이저 배율을 적용합니다.</p>
+      </div>
+      <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+        <p class="font-semibold text-slate-900 dark:text-white">🔵 Gemini — 보정 추정 (±10% 내외)</p>
+        <p class="mt-1">Gemini의 256k 토크나이저는 영어에서 GPT와 동급, 한글·한자에서 소폭 유리한 것으로 실측돼 그 배율을 적용합니다.</p>
+      </div>
+      <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+        <p class="font-semibold text-slate-900 dark:text-white">💰 비용</p>
+        <p class="mt-1">각 사 공식 API 입력 단가(<span class="method-asof"></span> 기준, USD/100만 토큰) × 토큰 수 × 환율. Gemini 3.1 Pro는 20만 토큰 초과분에 공시된 장문 단가($4)를 가산합니다. 출력(답변) 토큰 비용은 포함되지 않습니다.</p>
+      </div>
+      <p class="text-[11px] text-slate-400">정확한 청구 토큰이 필요하면 각 사 API의 토큰 계산 기능(count_tokens)을 사용하세요. 이 서비스는 입력 내용을 어디에도 전송하지 않으므로 추정 방식으로 제공합니다.</p>
+    </div>
+    <div class="mt-4 flex justify-end">
+      <button type="button" class="btn-primary" data-close>확인</button>
     </div>
   </div>
 </dialog>
