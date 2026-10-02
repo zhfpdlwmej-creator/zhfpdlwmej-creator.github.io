@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "promptslim",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set SERVER_PORT=%PORT%&& D:\\eclipse\\eclipse-workspace\\promptslim\\gradlew.bat bootRun -p D:\\eclipse\\eclipse-workspace\\promptslim"],
+      "port": 8180,
+      "autoPort": true
+    }
+  ]
+}

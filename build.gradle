@@ -1,0 +1,91 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.6.2'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+}
+
+ext['log4j2.version'] = '2.25.4'
+
+group = 'com.jacob'
+version = '1.0.1'
+description = 'PromptSlim - 100% 브라우저 내 처리 AI 프롬프트 글자 수/토큰 계산기 & 압축기'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    /* 서버는 정적 페이지 1장 + 보안 헤더만 내려준다 — 사용자 텍스트를 받는 엔드포인트는 존재하지 않는다 */
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+/* 브라우저 엔진(core.js) 단위 테스트 — Node 내장 테스트 러너(node --test). Node 미설치 환경에서는 건너뛴다 */
+def nodeAvailable = {
+    try {
+        def proc = ['node', '--version'].execute()
+        proc.waitFor()
+        return proc.exitValue() == 0
+    } catch (Exception ignored) {
+        return false
+    }
+}
+
+task jsTest(type: Exec) {
+    group = 'verification'
+    description = 'Runs browser-side engine unit tests (src/test/js) with node --test'
+    def specs = fileTree('src/test/js') { include '**/*.test.js' }
+    inputs.files(specs)
+    inputs.dir('src/main/resources/static/assets/js')
+    onlyIf { nodeAvailable() }
+    doFirst {
+        commandLine(['node', '--test'] + specs.files.collect { it.absolutePath }.sort())
+    }
+}
+
+check.dependsOn jsTest
+
+/* ------------------------------------------------------------------
+ * 정적 사이트 산출 (GitHub Pages 배포용)
+ *  - 서버 없이 그대로 서빙 가능한 완성본을 build/site 에 만든다
+ *  - index.html : FreeMarker 템플릿의 ${v}(캐시버스터)만 프로젝트 버전으로 치환
+ *  - CSP 는 템플릿의 <meta> 로 이미 포함 — 정적 호스팅에서도 무전송 보증 유지
+ * ------------------------------------------------------------------ */
+task staticSite(type: Copy) {
+    group = 'build'
+    description = 'Builds the static site for GitHub Pages into build/site'
+    into "$buildDir/site"
+    filteringCharset = 'UTF-8'
+    from('src/main/resources/templates/index.html') {
+        filter { String line -> line.replace('${v}', project.version.toString()) }
+    }
+    from('src/main/resources/static')
+    // Jekyll 처리 우회 (assets 등 폴더를 그대로 서빙)
+    doLast {
+        new File("$buildDir/site/.nojekyll").text = ''
+    }
+}

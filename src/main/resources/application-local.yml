@@ -1,0 +1,15 @@
+# ============================================================
+# local = 개발 PC 실행 프로필 (템플릿 캐시 off, devtools)
+# ============================================================
+spring:
+  freemarker:
+    cache: false
+
+  # 개발 중 정적 자원 캐시 off — 수정이 즉시 반영되도록 (운영은 ?v=버전 쿼리 + 7일 캐시)
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 0
+          no-cache: true
+          cache-public: false

@@ -1,0 +1,11 @@
+.git
+.gradle
+.claude
+.github
+build
+bin
+logs
+docs
+*.md
+Dockerfile
+.dockerignore
