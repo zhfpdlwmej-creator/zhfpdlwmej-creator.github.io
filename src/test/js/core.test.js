@@ -337,6 +337,10 @@ test('fixTypos: 흔한 오타 교정', () => {
   assert.equal(r.fixedCount, 5); // 안녕하세오·고갠님·됬·몇일·할께
 });
 
+test('fixTypos: 뒤에 글자가 붙은 오타도 교정 (몇일만/몇일째)', () => {
+  assert.equal(C.fixTypos('몇일만이에요, 몇일째 기다려요').text, '며칠만이에요, 며칠째 기다려요');
+});
+
 test('fixTypos: 자주 틀리는 맞춤법 (왠만/어떻해/이예요/않되)', () => {
   assert.equal(C.fixTypos('왠만하면 참아').text, '웬만하면 참아');
   assert.equal(C.fixTypos('나 어떻해').text, '나 어떡해');
