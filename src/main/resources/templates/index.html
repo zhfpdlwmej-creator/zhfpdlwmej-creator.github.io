@@ -18,6 +18,61 @@
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
 
+  <!-- 구조화 데이터 (검색 리치 결과) — JSON-LD 데이터 블록은 실행 스크립트가 아니라 CSP 영향 없음 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "토큰핏 TokenFit",
+        "alternateName": "TokenFit",
+        "url": "https://zhfpdlwmej-creator.github.io/",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+        "description": "GPT·Claude·Gemini 프롬프트의 토큰 수와 API 비용(원화)을 실시간 계산하고, 불필요한 내용을 다듬어 비용을 줄이고, 코드·문서의 변경점을 비교하는 무료 도구. 입력 데이터는 서버로 전송되지 않습니다.",
+        "inLanguage": "ko"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "토큰(Token)이 뭔가요? 글자 수와 다른가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "토큰은 AI 모델이 글을 읽는 최소 단위로, AI API 요금은 글자 수가 아니라 토큰 수로 청구됩니다. 한글 '안녕하세요'는 5글자지만 GPT 기준 약 2~3토큰이며, 영어 한 단어는 평균 1.3토큰입니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "같은 글인데 GPT·클로드·제미나이의 토큰 수가 왜 다른가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "모델마다 글을 쪼개는 토크나이저가 다르기 때문입니다. 최신 Claude는 같은 글에서 GPT보다 평균 60% 이상 많은 토큰을 사용하고, Gemini는 GPT와 비슷합니다. 토큰핏은 GPT는 공개 토크나이저로 직접 계산하고 Claude·Gemini는 실측 배율로 추정합니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "프롬프트를 다듬으면 정말 API 비용이 줄어드나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "네. 인사말, 연속 공백, 들여쓰기된 JSON 같은 군더더기는 답변 품질에 영향이 거의 없으면서 토큰만 차지합니다. 토큰핏의 한 번에 다듬기로 통상 30~40%의 토큰이 줄어들며, 반복 호출 시 그대로 비용 절감이 됩니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "입력한 내용이 서버로 전송되나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "아니요. 모든 계산은 사용자 브라우저 안에서 실행되고, 텍스트를 받는 서버 기능 자체가 없으며, 브라우저 보안 정책(CSP)으로 외부 전송이 차단돼 있습니다. 소스 코드도 공개돼 있어 검증 가능합니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "토큰 수 계산은 얼마나 정확한가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "GPT 계열은 공개 토크나이저를 직접 실행해 과금 토큰 수와 동일합니다. Claude·Gemini는 토크나이저가 비공개라 실측 연구 기반 추정치이며 ±10~20% 오차가 있을 수 있어 ≈로 표기합니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "무료인가요? 로그인이 필요한가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "완전 무료이며 로그인·회원가입이 없습니다. 입력 데이터를 수집하지 않고, 설정은 사용자 브라우저에만 저장됩니다." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script src="assets/js/theme-init.js?v=${v}"></script>
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <script src="assets/js/tw-config.js?v=${v}"></script>
@@ -322,6 +377,73 @@
       </div>
     </section>
   </div><!-- /view-cmp -->
+
+  <!-- ================= FAQ / 안내 콘텐츠 (검색엔진·사용자 안내) ================= -->
+  <section class="mt-10" aria-labelledby="faqTitle">
+    <h2 id="faqTitle" class="text-lg font-bold text-slate-900 dark:text-white">자주 묻는 질문</h2>
+    <p class="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+      토큰핏은 GPT·Claude(클로드)·Gemini(제미나이)에 보낼 프롬프트의 <b>토큰 수와 API 비용을 계산</b>하고,
+      군더더기를 덜어내 비용을 아끼고, 코드·문서의 변경점을 찾아주는 무료 도구입니다.
+    </p>
+
+    <div class="mt-4 grid gap-2.5">
+      <details class="faq">
+        <summary>토큰(Token)이 뭔가요? 글자 수와 다른가요?</summary>
+        <div>
+          <p>토큰은 AI 모델이 글을 읽는 최소 단위입니다. 글자 수와 달리 <b>단어·조사·기호 단위로 쪼개지며</b>, AI API 요금은 글자 수가 아니라 이 토큰 수로 청구됩니다. 예를 들어 "안녕하세요"는 5글자지만 GPT 기준 약 2~3토큰이고, 영어 한 단어는 평균 1.3토큰입니다. 그래서 같은 내용이라도 어떻게 쓰느냐에 따라 비용이 달라집니다.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>같은 글인데 GPT·클로드·제미나이의 토큰 수가 왜 다른가요?</summary>
+        <div>
+          <p>모델마다 글을 쪼개는 사전(토크나이저)이 다르기 때문입니다. 2026년 실측 기준 최신 Claude는 같은 글에서 GPT보다 평균 60% 이상 많은 토큰을 사용하고, Gemini는 GPT와 비슷하거나 한글에서 소폭 유리합니다. 토큰핏은 GPT는 공개 토크나이저로 직접 계산하고, Claude·Gemini는 글의 언어 구성(한글/영문/한자 비중)에 실측 배율을 가중해 추정합니다.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>프롬프트를 다듬으면 정말 API 비용이 줄어드나요?</summary>
+        <div>
+          <p>네. "안녕하세요, 바쁘시겠지만…" 같은 인사말, 연속 공백·빈 줄, 들여쓰기된 JSON은 AI의 답변 품질에는 영향이 거의 없으면서 토큰만 차지합니다. 토큰핏의 [한 번에 다듬기]는 이런 군더더기를 덜어내는데, 통상 30~40%의 토큰이 줄어듭니다. 프롬프트를 자동화 파이프라인에서 수천~수만 번 호출한다면 그대로 비용 절감이 됩니다 — 절약 효과 패널에서 1,000회 호출 기준 금액을 원화로 보여드립니다.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>입력한 내용이 정말 서버로 전송되지 않나요?</summary>
+        <div>
+          <p>네, 구조적으로 전송이 불가능합니다. 토큰 계산·다듬기·비교는 전부 지금 쓰고 계신 브라우저 안에서 실행되고, 이 사이트에는 텍스트를 받는 서버 기능 자체가 없습니다. 나아가 브라우저 보안 정책(CSP)으로 페이지의 어떤 코드도 외부로 데이터를 보낼 수 없게 차단해 두었습니다. 소스 코드가 공개돼 있어 누구나 검증할 수 있습니다. 사내 코드·계약서·개인정보가 섞인 글도 안심하고 붙여 넣으세요.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>토큰 수 계산은 얼마나 정확한가요?</summary>
+        <div>
+          <p>GPT 계열은 OpenAI가 공개한 토크나이저를 브라우저에서 실제로 실행하므로 과금 토큰 수와 동일합니다(오차 0). Claude·Gemini는 토크나이저가 비공개라 실측 연구 기반 추정치이며 ±10~20% 오차가 있을 수 있어 화면에 ≈로 표기합니다. 자세한 산출 근거는 [계산 방식] 버튼에서 확인할 수 있고, 모델 단가와 환율은 [단가 편집]에서 직접 바꿀 수 있습니다.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>오타·맞춤법 교정은 어떻게 동작하나요?</summary>
+        <div>
+          <p>"고갠님→고객님", "됬→됐", "할께요→할게요", "몇일→며칠"처럼 항상 틀린 표기만 담은 240여 개의 교정 규칙을 적용합니다. 문맥에 따라 맞을 수도 있는 표기는 건드리지 않도록 보수적으로 설계해, 멀쩡한 문장이 바뀌는 일이 없게 했습니다. 완전한 맞춤법 검사기가 아니라 자주 틀리는 표현을 빠르게 정리하는 도구이며, 무엇이 바뀌었는지는 변경 내역에서 확인할 수 있습니다.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>코드·문서 비교는 어떤 때 쓰나요?</summary>
+        <div>
+          <p>원본과 수정본 두 글(또는 코드)을 나란히 놓고 뭐가 달라졌는지 찾을 때 씁니다. 줄 단위로 추가·삭제·변경을 구분하고, 변경된 줄은 바뀐 단어까지 색으로 강조합니다. 계약서 개정 전후 비교, 코드 리뷰, 보고서 버전 비교, AI가 고쳐준 글에서 바뀐 부분 확인 등에 유용하며, 역시 브라우저 안에서만 처리됩니다.</p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>무료인가요? 로그인이 필요한가요?</summary>
+        <div>
+          <p>완전 무료이고 로그인·회원가입이 없습니다. 입력 데이터를 수집하지 않으므로 수집 동의 절차도 없습니다. 모델 단가·환율 같은 설정은 서버가 아니라 사용자 브라우저에만 저장됩니다.</p>
+        </div>
+      </details>
+    </div>
+  </section>
 </main>
 
 <footer class="border-t border-slate-200 py-6 text-center text-xs text-slate-400 dark:border-slate-800">

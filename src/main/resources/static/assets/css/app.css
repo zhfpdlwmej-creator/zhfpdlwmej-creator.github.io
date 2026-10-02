@@ -410,3 +410,33 @@ kbd {
 .dark .cmp-cell--empty {
   background: repeating-linear-gradient(135deg, rgb(15 23 42), rgb(15 23 42) 6px, rgb(30 41 59 / .5) 6px, rgb(30 41 59 / .5) 12px);
 }
+
+/* ---------- FAQ 아코디언 ---------- */
+.faq {
+  border-radius: .875rem; border: 1px solid rgb(226 232 240 / .8); background: #fff;
+  overflow: hidden;
+}
+.dark .faq { border-color: rgb(30 41 59); background: rgb(15 23 42); }
+.faq summary {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  cursor: pointer; list-style: none; padding: .85rem 1.1rem;
+  font-size: .875rem; font-weight: 600; color: rgb(30 41 59);
+  -webkit-tap-highlight-color: transparent;
+}
+.dark .faq summary { color: rgb(226 232 240); }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: ''; flex: none; width: .55rem; height: .55rem;
+  border-right: 2px solid rgb(148 163 184); border-bottom: 2px solid rgb(148 163 184);
+  transform: rotate(45deg); transition: transform .15s; margin-right: .15rem;
+}
+.faq[open] summary::after { transform: rotate(225deg); }
+.faq summary:hover { background: rgb(248 250 252); }
+.dark .faq summary:hover { background: rgb(30 41 59 / .5); }
+.faq > div {
+  padding: 0 1.1rem .95rem; font-size: .825rem; line-height: 1.75;
+  color: rgb(71 85 105);
+}
+.dark .faq > div { color: rgb(148 163 184); }
+.faq > div b { color: rgb(15 23 42); }
+.dark .faq > div b { color: rgb(226 232 240); }
