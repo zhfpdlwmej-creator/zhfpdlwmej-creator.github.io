@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>토큰핏 TokenFit — AI 토큰 계산기 · 프롬프트 압축 · 코드 비교</title>
-  <meta name="description" content="GPT-6 · Claude · Gemini 토큰 수와 API 비용(원화)을 실시간 계산하고, 공백·인사말·JSON을 원클릭으로 압축하고, 코드·문서 변경점을 비교하세요. 입력 데이터는 서버로 전송되지 않고 브라우저에서만 처리됩니다.">
+  <title>토큰핏 TokenFit — AI 토큰 계산기 · 프롬프트 다듬기 · 코드 비교</title>
+  <meta name="description" content="GPT-6 · Claude · Gemini 토큰 수와 API 비용(원화)을 실시간 계산하고, 공백·인사말·JSON 같은 군더더기를 원클릭으로 덜어내고, 코드·문서 변경점을 비교하세요. 입력 데이터는 서버로 전송되지 않고 브라우저에서만 처리됩니다.">
   <meta name="theme-color" content="#10b981">
   <!-- Google Search Console 소유권 확인 -->
   <meta name="google-site-verification" content="Wg9CgLqNcfzL5M0F2Q2ATTeJ3i0RHBTVsysqRJKSKxM">
@@ -13,8 +13,8 @@
   <!-- Zero Server Side Request 보증 — 정적 호스팅(GitHub Pages 등)에서도 동일하게 적용되도록 meta 로 선언.
        Spring 구동 시에는 SecurityHeaderFilter 의 동일 정책 헤더와 중복 적용(교집합 = 동일 정책)된다. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net data:; img-src 'self' data:; worker-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
-  <meta property="og:title" content="토큰핏 TokenFit — 토큰 계산기 · 프롬프트 압축 · 코드 비교">
-  <meta property="og:description" content="로그인 없이, 서버 전송 없이. 브라우저에서 100% 동작하는 AI 토큰 계산기 & 압축기.">
+  <meta property="og:title" content="토큰핏 TokenFit — 토큰 계산기 · 프롬프트 다듬기 · 코드 비교">
+  <meta property="og:description" content="로그인 없이, 서버 전송 없이. 브라우저에서 100% 동작하는 AI 토큰 계산기 & 프롬프트 다듬기.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
 
@@ -33,7 +33,7 @@
       <img src="img/favicon.svg" alt="" class="h-8 w-8">
       <span class="text-lg font-bold tracking-tight">토큰<span class="text-brand-600 dark:text-brand-400">핏</span></span>
       <span class="hidden text-[11px] font-semibold tracking-wide text-slate-400 sm:inline">TokenFit</span>
-      <span class="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 md:inline dark:bg-slate-800 dark:text-slate-400">토큰 계산 · 압축 · 비교</span>
+      <span class="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 md:inline dark:bg-slate-800 dark:text-slate-400">토큰 계산 · 다듬기 · 비교</span>
     </a>
     <div class="flex items-center gap-2">
       <span id="tokStatus" class="status-pill" data-state="loading" title="토크나이저 상태">
@@ -96,7 +96,7 @@
         </div>
 
         <!-- Optimizer toolbar -->
-        <div class="flex flex-wrap gap-2 px-4 pt-3" role="toolbar" aria-label="프롬프트 압축 도구">
+        <div class="flex flex-wrap gap-2 px-4 pt-3" role="toolbar" aria-label="프롬프트 다듬기 도구">
           <button type="button" class="btn-tool" data-op="whitespace" title="연속 공백 → 1칸, 연속 빈 줄 → 1줄, 줄 끝 공백 제거 (코드 블록 들여쓰기는 보존)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h7"/></svg>
             공백·줄바꿈 정리
@@ -111,9 +111,9 @@
           </button>
           <button type="button" class="btn-tool btn-tool--primary" data-op="all" title="위 3가지를 한 번에 (Ctrl+Enter)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            한 번에 압축
+            한 번에 다듬기
           </button>
-          <button id="undoBtn" type="button" class="btn-tool" disabled title="직전 압축/비우기 이전 상태로 되돌리기 (Ctrl+Shift+Z)">
+          <button id="undoBtn" type="button" class="btn-tool" disabled title="직전 다듬기/비우기 이전 상태로 되돌리기 (Ctrl+Shift+Z)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
             원복 <span id="undoCount" class="undo-count"></span>
           </button>
@@ -128,7 +128,7 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
-          <p class="hidden text-xs text-slate-400 md:block"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 한 번에 압축 · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> 원복</p>
+          <p class="hidden text-xs text-slate-400 md:block"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 한 번에 다듬기 · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> 원복</p>
           <div class="ml-auto flex items-center gap-2">
             <button id="clearBtn" type="button" class="btn-secondary">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
@@ -235,22 +235,22 @@
 
         <!-- Savings -->
         <section class="card p-4" aria-labelledby="saveTitle">
-          <h2 id="saveTitle" class="card-title">압축 효과</h2>
+          <h2 id="saveTitle" class="card-title">절약 효과 <small class="font-normal">— 다듬기 전후 비교</small></h2>
           <div id="saveEmpty" class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400 dark:border-slate-700">
-            압축 버튼을 누르면 원본 대비 절감량이 표시됩니다.
+            다듬기 버튼으로 군더더기를 덜어내면, 원본과 비교해 토큰·비용이 얼마나 줄었는지 보여줍니다.
           </div>
           <div id="saveBody" class="hidden">
             <div class="mt-3 flex items-end justify-between">
               <div>
-                <p class="text-xs text-slate-400">토큰 (GPT 기준)</p>
+                <p class="text-xs text-slate-400">토큰 수 <small>(다듬기 전 → 후, GPT 기준)</small></p>
                 <p class="text-lg font-semibold tabular-nums"><span id="svBefore">0</span> <span class="text-slate-400">→</span> <span id="svAfter" class="text-brand-600 dark:text-brand-400">0</span></p>
               </div>
               <p id="svPct" class="save-badge">-0%</p>
             </div>
             <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div id="svBar" class="h-full rounded-full bg-brand-500 transition-all duration-500" style="width:100%"></div></div>
             <ul class="mt-3 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-              <li class="flex justify-between"><span>줄어든 글자</span><b id="svChars" class="tabular-nums">0자</b></li>
-              <li class="flex justify-between"><span>1,000회 호출 시 절감 <small class="text-slate-400">(GPT-6 Astra)</small></span><b id="svCost" class="tabular-nums text-brand-700 dark:text-brand-400">$0</b></li>
+              <li class="flex justify-between"><span>줄어든 글자 수</span><b id="svChars" class="tabular-nums">0자</b></li>
+              <li class="flex justify-between"><span>아낀 비용 <small class="text-slate-400">(1,000회 호출 기준)</small></span><b id="svCost" class="tabular-nums text-brand-700 dark:text-brand-400">$0</b></li>
             </ul>
             <p id="svDetail" class="mt-2 text-xs text-slate-400"></p>
           </div>
@@ -333,7 +333,7 @@
     <p class="truncate text-sm font-semibold tabular-nums"><span id="mbTokens">0</span> 토큰 · <span id="mbCost">$0</span></p>
   </div>
   <div class="flex gap-2">
-    <button type="button" class="btn-secondary !px-3" data-op="all">압축</button>
+    <button type="button" class="btn-secondary !px-3" data-op="all">다듬기</button>
     <button id="mbCopy" type="button" class="btn-primary !px-3">복사</button>
   </div>
 </div>

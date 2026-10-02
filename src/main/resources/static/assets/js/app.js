@@ -104,7 +104,7 @@
       if (msg.type === 'result') {
         if (msg.id < lastDoneReq) return; // 뒤늦게 도착한 옛 결과 무시
         lastDoneReq = msg.id;
-        // 압축 직전 원문의 토큰 수 — 절감량 기준점 확정
+        // 다듬기 직전 원문의 토큰 수 — 절감량 기준점 확정
         if (msg.ok && msg.beforeCount != null && baseline && baseline.pending) {
           baseline.tokens = msg.beforeCount;
           baseline.pending = false;
@@ -147,7 +147,7 @@
    * 렌더링
    * ===================================================================== */
   var lastTokens = 0;
-  var baseline = null; // { tokens, chars } — 압축 전 원본 기준점
+  var baseline = null; // { tokens, chars } — 다듬기 전 원본 기준점
 
   function fmt(n) { return C.formatNumber(n); }
 
@@ -294,7 +294,7 @@
   });
 
   /* =====================================================================
-   * Undo + 압축 작업
+   * Undo + 다듬기 작업
    * ===================================================================== */
   var history = new C.History(100);
   var undoBtn = $('undoBtn');
@@ -322,8 +322,8 @@
   var OPS = {
     whitespace: { fn: C.cleanWhitespace, done: function (r) { return '공백·줄바꿈 정리 완료 (' + C.formatNumber(r.removedChars) + '자 감소)'; } },
     fillers: { fn: C.removeFillers, done: function (r) { return '인사말·수식어 ' + r.removedCount + '곳 정리'; } },
-    minify: { fn: C.minifyJsonAndCode, done: function (r) { return 'JSON ' + r.jsonCount + '개 · 코드 ' + r.codeCount + '개 압축'; } },
-    all: { fn: C.optimizeAll, done: function (r) { return '한 번에 압축 완료 (' + C.formatNumber(r.removedChars) + '자 감소)'; } }
+    minify: { fn: C.minifyJsonAndCode, done: function (r) { return 'JSON ' + r.jsonCount + '개 · 코드 ' + r.codeCount + '개 정리'; } },
+    all: { fn: C.optimizeAll, done: function (r) { return '한 번에 다듬기 완료 (' + C.formatNumber(r.removedChars) + '자 감소)'; } }
   };
 
   function runOp(op) {
@@ -333,17 +333,17 @@
     var before = input.value;
     var result = def.fn(before);
     if (!result.changed) {
-      // 이미 압축된 상태 — 마지막 변경 내역이 지금 텍스트와 일치하면 다시 펼쳐 보여준다
+      // 이미 다듬어진 상태 — 마지막 변경 내역이 지금 텍스트와 일치하면 다시 펼쳐 보여준다
       if (lastDiff && lastDiff.after === input.value) {
         renderDiff(lastDiff.before, lastDiff.after, lastDiff.label);
         diffCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        toast('이미 압축된 상태예요 — 이전 변경 내역을 다시 열었습니다');
+        toast('이미 다듬어진 상태예요 — 이전 변경 내역을 다시 열었습니다');
       } else {
         toast('더 줄일 내용이 없습니다 ✨');
       }
       return;
     }
-    // 기준점(압축 전 원문) — 토큰 수는 워커 응답으로 확정하므로 일단 pending
+    // 기준점(다듬기 전 원문) — 토큰 수는 워커 응답으로 확정하므로 일단 pending
     if (!baseline) baseline = { tokens: lastTokens, chars: C.analyze(before).chars, pending: true };
     snapshot();
     input.value = result.text;
@@ -355,14 +355,14 @@
   }
 
   /* =====================================================================
-   * 변경 내역(diff) 카드 — 압축 직전/직후 비교
+   * 변경 내역(diff) 카드 — 다듬기 직전/직후 비교
    * ===================================================================== */
-  var OP_LABELS = { whitespace: '공백·줄바꿈 정리', fillers: '인사말·수식어 제거', minify: 'JSON/코드 Minify', all: '한 번에 압축' };
+  var OP_LABELS = { whitespace: '공백·줄바꿈 정리', fillers: '인사말·수식어 제거', minify: 'JSON/코드 Minify', all: '한 번에 다듬기' };
   var diffCard = $('diffCard');
-  var lastDiff = null;   // { before, after, label } — 마지막 압축의 변경 내역
+  var lastDiff = null;   // { before, after, label } — 마지막 다듬기의 변경 내역
   var diffOpen = true;   // 접기/펼치기 상태 (카드 자체는 유효한 diff 가 있는 한 유지)
 
-  // 입력이 압축 결과와 달라졌을 때(직접 수정/원복/비우기) — 내역이 무효화되므로 카드 제거
+  // 입력이 다듬기 결과와 달라졌을 때(직접 수정/원복/비우기) — 내역이 무효화되므로 카드 제거
   function hideDiff() {
     lastDiff = null;
     diffCard.classList.add('hidden');
@@ -457,7 +457,7 @@
     baseline = null;
     hideDiff();
     onInput(true);
-    toast('샘플을 넣었습니다 — [한 번에 압축]을 눌러 보세요');
+    toast('샘플을 넣었습니다 — [한 번에 다듬기]를 눌러 보세요');
   });
 
   function readFile(file) {
