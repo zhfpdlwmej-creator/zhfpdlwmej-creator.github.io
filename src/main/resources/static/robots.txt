@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://zhfpdlwmej-creator.github.io/tokenfit/sitemap.xml
+Sitemap: https://zhfpdlwmej-creator.github.io/sitemap.xml
